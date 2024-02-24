@@ -16,10 +16,12 @@ public class HanoiTower : MonoBehaviour
     [SerializeField] private int[] peg2 = { 0, 0, 0, 0 };
     [SerializeField] private int[] peg3 = { 0, 0, 0, 0 };
 
+    private bool isDiscUp = false;
+
     private void Start()
     {
-        float initWidth = 1.8f;
-        float widthIncrement = 0.2f;
+        float initWidth = 1.4f;
+        float widthIncrement = 0.1f;
         
         for (int i = 0; i < peg1.Length; i++)
         {
@@ -88,6 +90,46 @@ public class HanoiTower : MonoBehaviour
         Transform toPeg = GetPegTransform(currentPeg - 1);
         
         disc.SetParent(toPeg);
+    }
+
+    public void MoveUp()
+    {
+        int[] currentArray = GetPeg(currentPeg);
+        int topNumberIndex = GetTopNumberIndex(currentArray);
+        
+        Debug.Log(topNumberIndex);
+
+        if (topNumberIndex != -1 && !isDiscUp)
+        {
+            Transform disc = PopDiscFromCurrentPeg();
+            
+            Debug.Log(disc);
+
+            Vector3 newPostion = peg1Transform.position + Vector3.up * 150.0f;
+
+            disc.position = newPostion;
+
+            isDiscUp = true;
+        }
+    }
+    
+    public void MoveDown()
+    {
+        int[] currentArray = GetPeg(currentPeg);
+        int topNumberIndex = GetTopNumberIndex(currentArray);
+        
+        Debug.Log(topNumberIndex);
+
+        if (topNumberIndex != -1 && isDiscUp)
+        {
+            Transform disc = PopDiscFromCurrentPeg();
+            
+            Debug.Log(disc);
+
+            Vector3 newPostion = peg1Transform.position + Vector3.up * 150.0f;
+
+            disc.position = newPostion;
+        }
     }
 
     private bool CanMoveRight()
