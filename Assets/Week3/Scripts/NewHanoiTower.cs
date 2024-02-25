@@ -94,16 +94,32 @@ public class NewHanoiTower : MonoBehaviour
         isDiscUp = true;
     }
 
-    // Minor Bug, can't move disc back down to original peg because it's still in the same place in the array.
+    // FIXED : Minor Bug, can't move disc back down to original peg because it's still in the same place in the array.
     public void MoveDown()
     {
         if (currentDisc != null)
         {
             int[] toArray = GetPeg(currentPeg);
             int toIndex = GetIndexOfFreeSlot(toArray);
-
+            
+            if (fromArray == toArray)
+            {
+                toIndex = fromIndex;
+            }
+            
             if (toIndex == -1) return;
 
+            if (fromArray == toArray && fromIndex == toIndex)
+            {
+                float samePosition = (toArray.Length - toIndex - 1) * (40.0f + 1.0f);
+                currentDisc.localPosition = new Vector3(0, samePosition, 0);
+                
+                currentDisc = null;
+                isDiscUp = false;
+                
+                return;
+            }
+            
             if (!CanAddToPeg(fromArray[fromIndex], toArray)) return;
             
             Transform currentPegTransform = GetPegTransform(currentPeg);
