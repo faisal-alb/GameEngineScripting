@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4191188825441907020}
   m_Layer: 5
   m_Name: Disc
-  m_TagString: Untagged
+  m_TagString: Disc
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
