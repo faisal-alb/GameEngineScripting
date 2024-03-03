@@ -65,6 +65,7 @@ public class Farmer : MonoBehaviour
 
         float randomDuration = Random.Range(2.8f, 4.2f);
 
+        /*
         farmerTransform.DOMove(beeHivePosition, randomDuration).OnComplete(() =>
         {
             int honeyFromHive = beeHive.CollectHoney();
@@ -79,5 +80,6 @@ public class Farmer : MonoBehaviour
                 isSleeping = true;
             });
         }).SetEase(Ease.InOutCubic);
+        */
     }
 }
