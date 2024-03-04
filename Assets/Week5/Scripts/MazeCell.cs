@@ -11,7 +11,7 @@ public class MazeCell : MonoBehaviour
     [SerializeField] private GameObject backWall;
     [SerializeField] private GameObject unvisitedBlock;
 
-    private bool isVisited;
+    public bool isVisited { get; private set; }
 
     public void VisitBlock()
     {

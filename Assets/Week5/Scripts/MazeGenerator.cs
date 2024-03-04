@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class MazeGenerator : MonoBehaviour
 {
@@ -11,7 +13,7 @@ public class MazeGenerator : MonoBehaviour
 
     private MazeCell[,] mazeGrid;
 
-    private void Start()
+    private IEnumerator Start()
     {
         mazeGrid = new MazeCell[mazeWidth, mazeHeight];
 
@@ -22,14 +24,24 @@ public class MazeGenerator : MonoBehaviour
                 mazeGrid[x, z] = Instantiate(mazeCellPrefab, new Vector3(x, 0, z), Quaternion.identity);
             }
         }
+
+        yield return GenerateMaze(null, mazeGrid[0, 0]);
     }
-    /* FINISH LATER
 
     private IEnumerator GenerateMaze(MazeCell prevCell, MazeCell currentCell)
     {
         currentCell.VisitBlock();
         
         ClearWalls(prevCell, currentCell);
+
+        yield return new WaitForSeconds(0.05f);
+
+        var nextCell = GetNextUnvisitedCell(currentCell);
+
+        if (nextCell != null)
+        {
+            yield return GenerateMaze(currentCell, nextCell);
+        }
     }
 
     private IEnumerator<MazeCell> GetUnvisitedCells(MazeCell currentCell)
@@ -39,14 +51,69 @@ public class MazeGenerator : MonoBehaviour
         
         int x = (int) currentCellPosition.x;
         int z = (int) currentCellPosition.z;
+
+        if ((x + 1) < mazeWidth)
+        {
+            var rightCell = mazeGrid[x + 1, z];
+
+            if (rightCell.isVisited == false)
+            {
+                yield return rightCell;
+            }
+        }
+        
+        if ((x - 1) >= 0)
+        {
+            var leftCell = mazeGrid[x - 1, z];
+
+            if (leftCell.isVisited == false)
+            {
+                yield return leftCell;
+            }
+        }
+        
+        if ((z + 1) < mazeHeight)
+        {
+            var frontCell = mazeGrid[x, z + 1];
+
+            if (frontCell.isVisited == false)
+            {
+                yield return frontCell;
+            }
+        }
+        
+        if ((z - 1) >= 0)
+        {
+            var backCell = mazeGrid[x, z - 1];
+
+            if (backCell.isVisited == false)
+            {
+                yield return backCell;
+            }
+        }
     }
 
     private MazeCell GetNextUnvisitedCell(MazeCell currentCell)
     {
+        var unvisitedCells = GetUnvisitedCells(currentCell);
+
+        List<MazeCell> mazeCellList = new List<MazeCell>();
+
+        while (unvisitedCells.MoveNext())
+        {
+            mazeCellList.Add(unvisitedCells.Current);
+        }
+
+        for (int i = mazeCellList.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+
+            (mazeCellList[i], mazeCellList[j]) = (mazeCellList[j], mazeCellList[i]);
+        }
+
+        return mazeCellList.FirstOrDefault();
     }
     
-    */
-
     private void ClearWalls(MazeCell prevCell, MazeCell currentCell)
     {
         if (prevCell == null) return;
