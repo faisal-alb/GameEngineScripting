@@ -1,149 +1,264 @@
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+// Credits : https://www.youtube.com/watch?v=OutlTTOm17M
+
 public class MazeGenerator : MonoBehaviour
 {
-    [SerializeField] private MazeCell mazeCellPrefab;
-    [SerializeField] private int mazeWidth;
-    [SerializeField] private int mazeHeight;
+    [SerializeField] private bool generateInstantly;
+    [SerializeField] private MazeNode nodePrefab;
+    [SerializeField] private Vector2Int mazeSize;
+    private MazeNode firstNode;
+    private MazeNode lastNode;
 
-    private MazeCell[,] mazeGrid;
-
-    private IEnumerator Start()
+    private void Start()
     {
-        mazeGrid = new MazeCell[mazeWidth, mazeHeight];
-
-        for (int x = 0; x < mazeWidth; x++)
+        if (generateInstantly)
         {
-            for (int z = 0; z < mazeHeight; z++)
-            {
-                mazeGrid[x, z] = Instantiate(mazeCellPrefab, new Vector3(x, 0, z), Quaternion.identity);
-            }
+            GenerateMazeInstant(mazeSize);
         }
-
-        yield return GenerateMaze(null, mazeGrid[0, 0]);
-    }
-
-    private IEnumerator GenerateMaze(MazeCell prevCell, MazeCell currentCell)
-    {
-        currentCell.VisitBlock();
-        
-        ClearWalls(prevCell, currentCell);
-
-        yield return new WaitForSeconds(0.05f);
-
-        var nextCell = GetNextUnvisitedCell(currentCell);
-
-        if (nextCell != null)
+        else
         {
-            yield return GenerateMaze(currentCell, nextCell);
+            StartCoroutine(GenerateMaze(mazeSize));
         }
     }
 
-    private IEnumerator<MazeCell> GetUnvisitedCells(MazeCell currentCell)
+    private IEnumerator GenerateMaze(Vector2Int size)
     {
-        Transform currentCellTransform = currentCell.transform;
-        Vector3 currentCellPosition = currentCellTransform.position;
-        
-        int x = (int) currentCellPosition.x;
-        int z = (int) currentCellPosition.z;
+        List<MazeNode> mazeNodes = new List<MazeNode>();
 
-        if ((x + 1) < mazeWidth)
+        for (int x = 0; x < size.x; x++)
         {
-            var rightCell = mazeGrid[x + 1, z];
-
-            if (rightCell.isVisited == false)
+            for (int y = 0; y < size.y; y++)
             {
-                yield return rightCell;
+                Vector3 nodePosition = new Vector3(x - (size.x / 2.0f), 0, y - (size.y / 2.0f));
+                MazeNode newNode = Instantiate(nodePrefab, nodePosition, Quaternion.identity, transform);
+                
+                mazeNodes.Add(newNode);
+
+                if (x == 0 && y == (size.y - 1))
+                {
+                    firstNode = newNode;
+                }
+
+                if (x == (size.x - 1) && y == 0)
+                {
+                    lastNode = newNode;
+                }
+                
+                yield return null;
             }
         }
+
+        List<MazeNode> currentPath = new List<MazeNode>();
+        List<MazeNode> completedNodes = new List<MazeNode>();
         
-        if ((x - 1) >= 0)
-        {
-            var leftCell = mazeGrid[x - 1, z];
+        currentPath.Add(mazeNodes[Random.Range(0, mazeNodes.Count)]);
+        currentPath[0].SetState(NodeState.Current);
 
-            if (leftCell.isVisited == false)
+        while (completedNodes.Count < mazeNodes.Count)
+        {
+            List<int> possibleNextNodes = new List<int>();
+            List<int> possibleDirections = new List<int>();
+
+            int currentNodeIndex = mazeNodes.IndexOf(currentPath[currentPath.Count - 1]);
+            int currentNodeX = currentNodeIndex / size.y;
+            int currentNodeY = currentNodeIndex % size.y;
+
+            // Checks the node to the right of the current node.
+            if (currentNodeX < size.x - 1)
             {
-                yield return leftCell;
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex + size.y]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex + size.y]))
+                {
+                    possibleDirections.Add(1);
+                    possibleNextNodes.Add(currentNodeIndex + size.y);
+                }
             }
-        }
-        
-        if ((z + 1) < mazeHeight)
-        {
-            var frontCell = mazeGrid[x, z + 1];
-
-            if (frontCell.isVisited == false)
+            // Checks the node to the left of the current node.
+            if (currentNodeX > 0)
             {
-                yield return frontCell;
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex - size.y]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex - size.y]))
+                {
+                    possibleDirections.Add(2);
+                    possibleNextNodes.Add(currentNodeIndex - size.y);
+                }
             }
-        }
-        
-        if ((z - 1) >= 0)
-        {
-            var backCell = mazeGrid[x, z - 1];
-
-            if (backCell.isVisited == false)
+            // Checks the node above the current node.
+            if (currentNodeY < size.y - 1)
             {
-                yield return backCell;
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex + 1]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex + 1]))
+                {
+                    possibleDirections.Add(3);
+                    possibleNextNodes.Add(currentNodeIndex + 1);
+                }
             }
+            // Checks the node below the current node.
+            if (currentNodeY > 0)
+            {
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex - 1]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex - 1]))
+                {
+                    possibleDirections.Add(4);
+                    possibleNextNodes.Add(currentNodeIndex - 1);
+                }
+            }
+            
+            // Picks the next node.
+            if (possibleDirections.Count > 0)
+            {
+                int chosenDirection = Random.Range(0, possibleDirections.Count);
+                MazeNode chosenNode = mazeNodes[possibleNextNodes[chosenDirection]];
+
+                switch (possibleDirections[chosenDirection])
+                {
+                    case 1:
+                        chosenNode.RemoveWall(1);
+                        currentPath[currentPath.Count - 1].RemoveWall(0);
+                        break;
+                    case 2:
+                        chosenNode.RemoveWall(0);
+                        currentPath[currentPath.Count - 1].RemoveWall(1);
+                        break;
+                    case 3:
+                        chosenNode.RemoveWall(3);
+                        currentPath[currentPath.Count - 1].RemoveWall(2);
+                        break;
+                    case 4:
+                        chosenNode.RemoveWall(2);
+                        currentPath[currentPath.Count - 1].RemoveWall(3);
+                        break;
+                }
+                
+                currentPath.Add(chosenNode);
+                chosenNode.SetState(NodeState.Current);
+            }
+            else
+            {
+                completedNodes.Add(currentPath[currentPath.Count - 1]);
+                
+                currentPath[currentPath.Count -1].SetState(NodeState.Completed);
+                
+                currentPath.RemoveAt(currentPath.Count - 1);
+            }
+            
+            firstNode.SetState(NodeState.Available);
+            lastNode.SetState(NodeState.Available);
+
+            yield return new WaitForSeconds(0.05f);
         }
-    }
-
-    private MazeCell GetNextUnvisitedCell(MazeCell currentCell)
-    {
-        var unvisitedCells = GetUnvisitedCells(currentCell);
-
-        List<MazeCell> mazeCellList = new List<MazeCell>();
-
-        while (unvisitedCells.MoveNext())
-        {
-            mazeCellList.Add(unvisitedCells.Current);
-        }
-
-        for (int i = mazeCellList.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-
-            (mazeCellList[i], mazeCellList[j]) = (mazeCellList[j], mazeCellList[i]);
-        }
-
-        return mazeCellList.FirstOrDefault();
     }
     
-    private void ClearWalls(MazeCell prevCell, MazeCell currentCell)
+    private void GenerateMazeInstant(Vector2Int size)
     {
-        if (prevCell == null) return;
+        List<MazeNode> mazeNodes = new List<MazeNode>();
 
-        if (prevCell.transform.position.x < currentCell.transform.position.x)
+        for (int x = 0; x < size.x; x++)
         {
-            prevCell.ClearRightWall();
-            currentCell.ClearLeftWall();
-            return;
+            for (int y = 0; y < size.y; y++)
+            {
+                Vector3 nodePosition = new Vector3(x - (size.x / 2.0f), 0, y - (size.y / 2.0f));
+                MazeNode newNode = Instantiate(nodePrefab, nodePosition, Quaternion.identity, transform);
+                
+                mazeNodes.Add(newNode);
+            }
         }
+
+        List<MazeNode> currentPath = new List<MazeNode>();
+        List<MazeNode> completedNodes = new List<MazeNode>();
         
-        if (prevCell.transform.position.x > currentCell.transform.position.x)
+        currentPath.Add(mazeNodes[Random.Range(0, mazeNodes.Count)]);
+
+        while (completedNodes.Count < mazeNodes.Count)
         {
-            prevCell.ClearLeftWall();
-            currentCell.ClearRightWall();
-            return;
-        }
-        
-        if (prevCell.transform.position.z < currentCell.transform.position.z)
-        {
-            prevCell.ClearFrontWall();
-            currentCell.ClearBackWall();
-            return;
-        }
-        
-        if (prevCell.transform.position.z > currentCell.transform.position.z)
-        {
-            prevCell.ClearBackWall();
-            currentCell.ClearFrontWall();
-            return;
+            List<int> possibleNextNodes = new List<int>();
+            List<int> possibleDirections = new List<int>();
+
+            int currentNodeIndex = mazeNodes.IndexOf(currentPath[currentPath.Count - 1]);
+            int currentNodeX = currentNodeIndex / size.y;
+            int currentNodeY = currentNodeIndex % size.y;
+
+            // Checks the node to the right of the current node.
+            if (currentNodeX < size.x - 1)
+            {
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex + size.y]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex + size.y]))
+                {
+                    possibleDirections.Add(1);
+                    possibleNextNodes.Add(currentNodeIndex + size.y);
+                }
+            }
+            // Checks the node to the left of the current node.
+            if (currentNodeX > 0)
+            {
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex - size.y]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex - size.y]))
+                {
+                    possibleDirections.Add(2);
+                    possibleNextNodes.Add(currentNodeIndex - size.y);
+                }
+            }
+            // Checks the node above the current node.
+            if (currentNodeY < size.y - 1)
+            {
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex + 1]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex + 1]))
+                {
+                    possibleDirections.Add(3);
+                    possibleNextNodes.Add(currentNodeIndex + 1);
+                }
+            }
+            // Checks the node below the current node.
+            if (currentNodeY > 0)
+            {
+                if (!completedNodes.Contains(mazeNodes[currentNodeIndex - 1]) &&
+                    !currentPath.Contains(mazeNodes[currentNodeIndex - 1]))
+                {
+                    possibleDirections.Add(4);
+                    possibleNextNodes.Add(currentNodeIndex - 1);
+                }
+            }
+            
+            // Picks the next node.
+            if (possibleDirections.Count > 0)
+            {
+                int chosenDirection = Random.Range(0, possibleDirections.Count);
+                MazeNode chosenNode = mazeNodes[possibleNextNodes[chosenDirection]];
+
+                switch (possibleDirections[chosenDirection])
+                {
+                    case 1:
+                        chosenNode.RemoveWall(1);
+                        currentPath[currentPath.Count - 1].RemoveWall(0);
+                        break;
+                    case 2:
+                        chosenNode.RemoveWall(0);
+                        currentPath[currentPath.Count - 1].RemoveWall(1);
+                        break;
+                    case 3:
+                        chosenNode.RemoveWall(3);
+                        currentPath[currentPath.Count - 1].RemoveWall(2);
+                        break;
+                    case 4:
+                        chosenNode.RemoveWall(2);
+                        currentPath[currentPath.Count - 1].RemoveWall(3);
+                        break;
+                }
+                
+                currentPath.Add(chosenNode);
+            }
+            else
+            {
+                completedNodes.Add(currentPath[currentPath.Count - 1]);
+                
+                currentPath.RemoveAt(currentPath.Count - 1);
+            }
         }
     }
 }
