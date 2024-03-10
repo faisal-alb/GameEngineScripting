@@ -10,7 +10,8 @@ using Random = UnityEngine.Random;
 public class MazeGenerator : MonoBehaviour
 {
     [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private bool generateInstantly;
+    [SerializeField] private GameObject endPrefab;
+    [SerializeField] private bool generateInstantly = true;
     [SerializeField] private MazeNode nodePrefab;
     [SerializeField] private Vector2Int mazeSize;
     private MazeNode firstNode;
@@ -277,12 +278,14 @@ public class MazeGenerator : MonoBehaviour
 
     private void SpawnMazeComponents()
     {
-        Debug.Log("test1");
-        
         if (playerPrefab != null && firstNode != null)
         {
-            Debug.Log("test2");
             Instantiate(playerPrefab, firstNode.transform.position, Quaternion.identity);
+        }
+        
+        if (endPrefab != null && lastNode != null)
+        {
+            Instantiate(endPrefab, lastNode.transform.position, Quaternion.identity);
         }
     }
 }
