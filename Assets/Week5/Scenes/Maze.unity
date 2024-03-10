@@ -338,7 +338,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56e95452e5d02854eb5e8cf7cd12d74b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  generateInstantly: 0
+  playerPrefab: {fileID: 6298808280330318858, guid: fa02ba232c1d0714f94935993a0b2f95, type: 3}
+  generateInstantly: 1
   nodePrefab: {fileID: 1774870729950415385, guid: 797098a476fd795499e72dc816cc8e30, type: 3}
   mazeSize: {x: 10, y: 10}
 --- !u!4 &1133527583
