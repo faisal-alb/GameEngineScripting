@@ -3,13 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class MazePlayer : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 4.0f;
     [SerializeField] private InputActionAsset inputActions;
+    [SerializeField] private TextMeshProUGUI healthText;
     private InputAction moveAction;
     private Rigidbody rb;
+
+    private int health = 100;
 
     private void Awake()
     {
@@ -39,5 +43,29 @@ public class MazePlayer : MonoBehaviour
     private void OnDisable()
     {
         inputActions.FindActionMap("MazeActionMap").Disable();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("MazeLava"))
+        {
+            DecreaseHealth(10);
+        }
+    }
+
+    private void DecreaseHealth(int amount)
+    {
+        health -= amount;
+
+        if (healthText != null)
+        {
+            healthText.text = "Health: " + health;
+        }
+
+        if (health <= 0)
+        {
+            // reset game.
+            // Reset System Incomplete
+        }
     }
 }
